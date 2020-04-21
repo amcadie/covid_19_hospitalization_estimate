@@ -10,7 +10,7 @@ beautifulsoup4            4.8.2                    py37_0
 blas                      1.0                         mkl  
 bleach                    3.1.0                    py37_0  
 ca-certificates           2020.1.1                      0  
-certifi                   2019.11.28               py37_1  
+certifi                   2020.4.5.1               py37_0  
 cffi                      1.14.0           py37hb5b8e2f_0  
 chardet                   3.0.4                 py37_1003  
 cryptography              2.8              py37ha12b0ac_0  
@@ -57,7 +57,7 @@ ncurses                   6.2                  h0a44026_0
 notebook                  6.0.3                    py37_0  
 numpy                     1.18.1           py37h7241aed_0  
 numpy-base                1.18.1           py37h6575580_1  
-openssl                   1.1.1e               h1de35cc_0  
+openssl                   1.1.1f               h1de35cc_0  
 pandas                    1.0.1            py37h6c726b0_0  
 pandoc                    2.2.3.2                       0  
 pandocfilters             1.4.2                    py37_1  
@@ -102,6 +102,7 @@ wcwidth                   0.1.9                      py_0
 webencodings              0.5.1                    py37_1  
 wheel                     0.34.2                   py37_0  
 widgetsnbextension        3.5.1                    py37_0  
+xlrd                      1.2.0                    py37_0  
 xz                        5.2.4                h1de35cc_4  
 zeromq                    4.3.1                h0a44026_3  
 zipp                      2.2.0                      py_0  
