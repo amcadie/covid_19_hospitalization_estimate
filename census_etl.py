@@ -1,16 +1,19 @@
 # Small ETL job to pull 2017 census from the Census Bureau, build the join key, and write to a sqlite database
 
+from bs4 import BeautifulSoup
 import pandas as pd
+import requests
 import sqlite3
+import re
 
-print('Fetching data...')
+print('Fetching census data...')
 # get data
 pop = pd.read_csv('https://www2.census.gov/programs-surveys/popest/datasets/2010-2017/counties/asrh/cc-est2017-alldata.csv',
                  encoding='ISO-8859-1')
 
 
 print('Processing...')
-    
+
 # create join key, add description for keyed fields
 # data dictionary: https://www2.census.gov/programs-surveys/popest/technical-documentation/file-layouts/2010-2017/cc-est2017-alldata.pdf?#
 
@@ -25,15 +28,15 @@ pop = pop.assign(COUNTY_KEY = lambda x: x['CTYNAME'].str.extract(r'([A-Za-z\s\.\
                  AGEGRP_DESCR = lambda x: x['AGEGRP'].map(agegrp_map)
                 )
 
-       
+
 # Manually fix a few County/district names so they join to the NYT cases dataset
 
-# All cases for the five boroughs of New York City 
-# (New York, Kings, Queens, Bronx and Richmond counties) 
+# All cases for the five boroughs of New York City
+# (New York, Kings, Queens, Bronx and Richmond counties)
 # are assigned to a single area called New York City.
 nyc_idx = (pop.CTYNAME.str.contains(r'New York|Kings|Queens|Bronx|Richmond')) \
     & (pop.STNAME == 'New York')
-    
+
 pop.loc[nyc_idx, 'COUNTY_KEY'] = 'New York City'
 
 # D.C
@@ -41,6 +44,33 @@ pop.loc[pop.CTYNAME == 'District of Columbia', 'COUNTY_KEY'] = 'District of Colu
 
 # make case insensitive
 pop['COUNTY_KEY'] = pop.COUNTY_KEY.str.lower()
+
+# pull in census bureau regions to add a geographic dimension
+print('Fetching region data...')
+
+regions_html = requests.get('https://simple.wikipedia.org/wiki/List_of_regions_of_the_United_States')
+regions_soup = BeautifulSoup(regions_html.content, features = 'html.parser')
+
+def is_division(tag):
+    return tag.name == 'li' and re.search('Division', tag.contents[0])
+
+regions_list = regions_soup.find('ul')
+regions = regions_list.find_all('li')
+regions_dict = dict()
+for region in regions:
+    for division in region.find_all(is_division):
+        div_name = re.sub(r'([/w]*)(\s\(not yet started\))', r'\1', division.a['title'])
+        states = [item.string for item in division.find('ul').find_all('li')]
+        regions_dict[div_name] = states
+
+# reshape into a state:region dictionary
+regions_dict_inverted = {}
+for k, v in regions_dict.items():
+    for state in v:
+        regions_dict_inverted[state] = k
+
+# map to dataset
+pop['region'] = pop['STNAME'].map(regions_dict_inverted)
 
 print('Writing to DB...')
 
