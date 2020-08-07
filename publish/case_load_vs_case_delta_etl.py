@@ -1,12 +1,7 @@
-import requests
 import re
-import zipfile
 import sqlite3
 import datetime
-from bs4 import BeautifulSoup
 import pandas as pd
-import numpy as np
-import altair as alt
 
 # get NYT case data
 cases = pd.read_csv('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv')
@@ -40,7 +35,7 @@ cases['deaths_new'] = cases['deaths'] - cases['deaths_shifted']
 # to avoid having to re-download every time I run the notebook
 # see census_etl.py for details
 
-conn = sqlite3.connect('/Users/amcadi/Documents/opensource/covid_19_hospitalization_estimate/US_county_census.db')
+conn = sqlite3.connect('US_county_census.db')
 
 # start with 2017 census and total population
 # might as well resort to SQL yelling bc names are all in caps
@@ -78,10 +73,11 @@ cases = (cases
          .reset_index()
         )
 
+# join the census dataset
 cases_percap = cases.merge(pop17, how = 'left', left_on = ['county_key', 'state'],
                            right_on = ['COUNTY_KEY', 'STNAME'])
 
-# calculate percap rates
+# calculate per-capita rates
 cases_percap = (cases_percap
                 .dropna()
                 .assign(cases_per1k = lambda x: x.cases / x.TOT_POP * 1000,
@@ -108,7 +104,7 @@ cases_percap['cases_new_sum14'] = (cases_percap
 # filter for 3 days ago, giving some time for the latest data to be populated
 three_days_back = cases_percap.date.max() - datetime.timedelta(days = 3)
 
-# make copy explicit to avoid subsequent SettingWithCopy warning
+# get larger counties @three_days_back, make copy explicit to avoid subsequent SettingWithCopy warning
 cases_percap_recent = cases_percap.query('TOT_POP > 100000 and date == @three_days_back').copy()
 
 # calculate week-over-week proportional change
