@@ -2,3 +2,5 @@
 *.html
 *.json
 *.db
+# ignore subdirectory with proxy details and credentials
+publish/private/
